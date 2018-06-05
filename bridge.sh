@@ -8,7 +8,7 @@ GW=`netstat -rn  |grep $IF |awk -F " " '{print $2}' |grep -v 0.0.0.0`
 RBGW=`cat /tmp/GW.txt`
 RBIF=`cat /tmp/IF.txt`
 bridge=br2
-bridge_status=`brctl show |grep br2 |wc -l`
+bridge_status=`brctl show |grep $bridge |wc -l`
 
 if ! ping $GW -c 1 ;then
 	echo "error"
