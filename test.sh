@@ -1,40 +1,39 @@
 #!/bin/bash
 
-echo "please insert ip for make bridge network"
-
 IP=$1
 if [[ $IP = "" ]];then
+	echo "please insert ip for make bridge network"
 	read IP
 fi
 
-gw_chk_file="/tnp/GW.txt"
-interface_addr_file="/tnp/interface.txt"
-
-Installer=""
+if [[ $(cat /etc/*-release 2> /dev/null | head -1 |grep Ubuntu) != "" ]];then
+	Installer="apt-get"
+elif [[ $(cat /etc/*-release 2> /dev/null | head -1 |grep CentOS) != "" ]];then
+	Installer="yum"
+fi
 
 package_checker(){
 cmd_name=$1
 package_name=$2
 	if [[ $(which $cmd_name) = "" ]];then
-		$Installer install $package_name
+		$Installer install -y $package_name
 		echo " = $package_name package has been installed"
 	fi
-
 }	
-
 
 ## Make sure the command & package install check
 #package_checker ip ntmgt
-#package_checker netstat netstat
-#package_checker br_ctl brctl
+package_checker netstat net-tools
+package_checker brctl bridge-utils
 #package_checker modprobe kvm
-
 
 interface=`ip addr |grep $IP |awk -F " " '{print $NF}'`
 GW=`netstat -rn  |grep $interface |awk -F " " '{print $2}' |grep -v 0.0.0.0`
 RBGW=`cat /tmp/GW.txt`
 bridge=metrom_br
 bridge_status=`brctl show |grep $bridge |wc -l`
+gw_chk_file="/tmp/GW.txt"
+interface_addr_file="/tmp/interface.txt"
 
 
 if ! ping $GW -c 1 ;then
@@ -63,4 +62,3 @@ elif [[ $bridge_status == 1 ]];then
 else
 	exit 1
 fi
-	
