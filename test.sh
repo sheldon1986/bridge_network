@@ -8,7 +8,7 @@ fi
 
 if [[ $(cat /etc/*-release 2> /dev/null | head -1 |grep Ubuntu) != "" ]];then
 	Installer="apt-get"
-elif [[ $(cat /etc/*-release 2> /dev/null | head -1 |grep CentOS) != "" ]];then
+else
 	Installer="yum"
 fi
 
@@ -22,17 +22,15 @@ package_name=$2
 }	
 
 ## Make sure the command & package install check
-#package_checker ip ntmgt
 package_checker netstat net-tools
 package_checker brctl bridge-utils
-#package_checker modprobe kvm
 
 interface=`ip addr |grep $IP |awk -F " " '{print $NF}'`
-GW=`netstat -rn  |grep $interface |awk -F " " '{print $2}' |grep -v 0.0.0.0`
-RBGW=`cat /tmp/GW.txt`
+#GW=`netstat -rn  |grep $interface |awk -F " " '{print $2}' |grep -v 0.0.0.0`
+GW=192.0.0.3
 bridge=metrom_br
-bridge_status=`brctl show |grep $bridge |wc -l`
-gw_chk_file="/tmp/GW.txt"
+bridge_chk=`brctl show |grep $bridge |wc -l`
+gw_chk_file="/tmp/gateway.txt"
 interface_addr_file="/tmp/interface.txt"
 
 
@@ -53,12 +51,12 @@ fi
 
 if ping $GW -c 1 ;then
 	echo "complete"
-elif [[ $bridge_status == 1 ]];then
+elif [[ $bridge_chk == 1 ]];then
         echo "Bridge Configuration rollback"
 	ip link set $bridge down;
         brctl delbr $bridge;
-	ifconfig $RBinterface $IP
-	route add -net default gw $RBGW
+	ifconfig $(cat $interface_addr_file) $IP
+	route add -net default gw $(cat $gw_chk_file)
 else
 	exit 1
 fi
