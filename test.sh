@@ -7,6 +7,8 @@ if [[ $IP = "" ]];then
 	read IP
 fi
 
+gw_chk_file="/tnp/GW.txt"
+interface_addr_file="/tnp/interface.txt"
 
 Installer=""
 
@@ -25,42 +27,40 @@ package_name=$2
 #package_checker ip ntmgt
 #package_checker netstat netstat
 #package_checker br_ctl brctl
+#package_checker modprobe kvm
 
 
 interface=`ip addr |grep $IP |awk -F " " '{print $NF}'`
 GW=`netstat -rn  |grep $interface |awk -F " " '{print $2}' |grep -v 0.0.0.0`
 RBGW=`cat /tmp/GW.txt`
-RBinterface=`cat /tmp/interface.txt`
 bridge=metrom_br
 bridge_status=`brctl show |grep $bridge |wc -l`
 
 
-
-
-GW=109.0.0.2
-
-if [[ ! $(ping $GW -c 1) ]];then
+if ! ping $GW -c 1 ;then
 	echo "error"
 else
         echo "Bridge network configuration"
-	echo $interface > /tmp/interface.txt
+	echo "$interface" > $interface_addr_file
         modprobe bridge;
         brctl addbr $bridge;
         brctl addif $bridge $interface;
         ifconfig $interface 0.0.0.0;
         ifconfig $bridge $IP up;
         route add -net default gw $GW
-	echo $GW > /tmp/GW.txt
-fi	
-	if [[ $(ping $GW -c 1) ]] ;then
-		echo "complete"
-	else if [[ $bridge_status == 1 ]];then
-	        echo "Bridge Configuration rollback"
-        	ip link set $bridge down;
-     	        brctl delbr $bridge;
-        	ifconfig $RBinterface $IP
-		route add -net default gw $RBGW
-	else
-		exit 1
-	fi
+	echo "$GW" > $gw_chk_file
 fi
+
+
+if ping $GW -c 1 ;then
+	echo "complete"
+elif [[ $bridge_status == 1 ]];then
+        echo "Bridge Configuration rollback"
+	ip link set $bridge down;
+        brctl delbr $bridge;
+	ifconfig $RBinterface $IP
+	route add -net default gw $RBGW
+else
+	exit 1
+fi
+	
