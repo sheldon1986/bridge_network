@@ -26,9 +26,8 @@ package_checker netstat net-tools
 package_checker brctl bridge-utils
 
 interface=`ip addr |grep $IP |awk -F " " '{print $NF}'`
-#GW=`netstat -rn  |grep $interface |awk -F " " '{print $2}' |grep -v 0.0.0.0`
-GW=192.0.0.3
-bridge=metrom_br
+GW=`netstat -rn  |grep $interface |awk -F " " '{print $2}' |grep -v 0.0.0.0`
+bridge=br-metrom
 bridge_chk=`brctl show |grep $bridge |wc -l`
 gw_chk_file="/tmp/gateway.txt"
 interface_addr_file="/tmp/interface.txt"
