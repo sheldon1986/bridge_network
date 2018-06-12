@@ -29,14 +29,13 @@ package_checker netstat net-tools
 package_checker brctl bridge-utils
 
 interface=`ip addr |grep $IP |awk -F " " '{print $NF}'`
-#GW=`netstat -rn  |grep $interface |awk -F " " '{print $2}' |grep -v 0.0.0.0`
-GW=192.0.0.3
+GW=`netstat -rn  |grep $interface |awk -F " " '{print $2}' |grep -v 0.0.0.0`
+#GW=192.0.0.3
 bridge=br-metrom
 bridge_chk=`brctl show |grep $bridge |wc -l`
 gw_chk_file="/tmp/gateway.txt"
 interface_addr_file="/tmp/interface.txt"
 ip_route=`ip route |grep $interface |grep -v default |awk '{print $1}' |awk -F "/" '{print $2}'`
-ip_route_BAK=`ip route |grep $interface|grep -v default |awk '{print $1}' |awk -F "/" '{print $2}'`
 
 
 cdr2mask ()
@@ -48,7 +47,6 @@ cdr2mask ()
 }
 
 NM=`cdr2mask $ip_route`
-NM_BAK=`cdr2mask $ip_route_BAK`
 
 
 if ! ping $GW -c 1 ;then
@@ -72,7 +70,7 @@ elif [[ $bridge_chk == 1 ]];then
         echo "Bridge Configuration rollback"
 	ip link set $bridge down
         brctl delbr $bridge
-	ifconfig $(cat $interface_addr_file) $IP netmask $NM_BAK
+	ifconfig $(cat $interface_addr_file) $IP netmask $NM
 	route add -net default gw $(cat $gw_chk_file)
 else
 	exit 1
