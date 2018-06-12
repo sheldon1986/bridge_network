@@ -34,6 +34,7 @@ bridge=br-metrom
 bridge_chk=`brctl show |grep $bridge |wc -l`
 gw_chk_file="/tmp/gateway.txt"
 interface_addr_file="/tmp/interface.txt"
+NM=`ifconfig |grep $IP |awk '{print $4}'`
 
 
 if ! ping $GW -c 1 ;then
@@ -45,7 +46,7 @@ else
         brctl addbr $bridge;
         brctl addif $bridge $interface;
         ifconfig $interface 0.0.0.0;
-        ifconfig $bridge $IP up;
+        ifconfig $bridge $IP up netmask $NM;
         route add -net default gw $GW
 	echo "$GW" > $gw_chk_file
 fi
@@ -57,7 +58,7 @@ elif [[ $bridge_chk == 1 ]];then
         echo "Bridge Configuration rollback"
 	ip link set $bridge down;
         brctl delbr $bridge;
-	ifconfig $(cat $interface_addr_file) $IP
+	ifconfig $(cat $interface_addr_file) $IP netmask $NM;
 	route add -net default gw $(cat $gw_chk_file)
 else
 	exit 1
